@@ -10,6 +10,8 @@ extern "C" {
 #include <stdexcept>
 #include <vector>
 #include <fstream>
+#include <algorithm>
+#include <cctype>
 
 #include "ai/ai.h"
 #include "ai/logger.h"
@@ -46,11 +48,53 @@ static std::string get_api_key() {
     return api_key;
 }
 
+static std::string validate_and_sanitize_sql(std::string generated_sql_str) {
+    // Trim leading and trailing whitespace from the generated SQL
+    const std::string& whitespace = " \t\n\r\f\v";
+    size_t first = generated_sql_str.find_first_not_of(whitespace);
+    if (std::string::npos != first)
+    {
+        size_t last = generated_sql_str.find_last_not_of(whitespace);
+        generated_sql_str = generated_sql_str.substr(first, (last - first + 1));
+    }
+    else
+    {
+        generated_sql_str.clear(); // The string is all whitespace
+    }
+
+    std::string upper_sql = generated_sql_str;
+    std::transform(upper_sql.begin(), upper_sql.end(), upper_sql.begin(),
+                    [](unsigned char c){ return std::toupper(c); });
+
+    if (upper_sql.rfind("SELECT", 0) != 0) {
+        elog(ERROR, "Generated query is not a SELECT statement: %s", generated_sql_str.c_str());
+    }
+
+    // Safety check for potentially harmful keywords
+    const std::vector<std::string> forbidden_keywords = {
+        "INSERT", "UPDATE", "DELETE", "DROP", "CREATE", "ALTER", "TRUNCATE",
+        "GRANT", "REVOKE", "SET ", "EXECUTE", "PERFORM",
+        "PG_SLEEP", "DBLINK", "LO_IMPORT", "LO_EXPORT",
+        "PG_READ_FILE", "PG_LS_DIR"
+    };
+
+    for (const auto& keyword : forbidden_keywords) {
+        if (upper_sql.find(keyword) != std::string::npos) {
+            elog(ERROR, "Generated query contains a forbidden keyword: %s", keyword.c_str());
+        }
+    }
+
+    if (generated_sql_str.find(';') != std::string::npos) {
+        elog(ERROR, "Generated query contains a semicolon, which is not allowed: %s", generated_sql_str.c_str());
+    }
+
+    return generated_sql_str;
+}
+
 static std::string generate_sql_for_prompt(const char* natural_language_query, const char* model_name = "openai/gpt-oss-20b:free") {
     std::string generated_sql_str;
-    elog(INFO, "pg_ai_sdk: Received query: \"%s\"", natural_language_query);
+    // elog(INFO, "pg_ai_sdk: Received query: \"%s\"", natural_language_query);
 
-    // 2. Use the SPI to get schema information from the database.
     elog(INFO, "pg_ai_sdk: Fetching database schema information.");
     std::string schema_info;
     if (SPI_connect() == SPI_OK_CONNECT) {
@@ -71,12 +115,10 @@ static std::string generate_sql_for_prompt(const char* natural_language_query, c
         elog(ERROR, "SPI_connect failed");
     }
 
-    // 3. Construct a prompt for the AI model, including the schema and the user's query.
     std::string prompt = "Given the following database schema:\n\n" + schema_info + "\n\nGenerate a SQL query that does the following:\n" + natural_language_query;
     elog(INFO, "pg_ai_sdk: Constructed prompt for AI model.");
 
-    // 4. Initialize the ai-sdk-cpp client.
-    elog(INFO, "pg_ai_sdk: Initializing AI client.");
+    // elog(INFO, "pg_ai_sdk: Initializing AI client.");
     std::string api_key = get_api_key();
 
     auto client = ai::openai::create_client(api_key, "https://openrouter.ai/api");
@@ -88,7 +130,7 @@ static std::string generate_sql_for_prompt(const char* natural_language_query, c
         "Your ONLY task is to produce correct and optimized PostgreSQL SELECT statements based strictly on the schema and requirements provided by the user.\n"
         "\n"
         "RULES:\n"
-        "1. You must output ONLY a PostgreSQL SELECT query. No explanations, no summaries, no analysis, no markdown.\n"
+        "1. You must output ONLY a PostgreSQL SELECT query and no other type of query. No explanations, no summaries, no analysis, no markdown.\n"
         "2. You may use complex SQL features including:\n"
         "- JOINs (inner, left, right, full)\n"
         "- CTEs (WITH clauses)\n"
@@ -103,7 +145,7 @@ static std::string generate_sql_for_prompt(const char* natural_language_query, c
         "- UPPERCASE keywords\n"
         "- lowercase table/column names\n"
         "- Indented structure\n"
-        "4. You MAY include brief inline SQL comments ONLY if they help clarify logic.\n"
+        "4. You MAY NOT include ANY inline SQL comments.\n"
         "5. The user will always provide the schema in their request.\n"
         "6. If schema is ambiguous, infer sensible table/column relationships.\n"
         "7. Never generate INSERT, UPDATE, DELETE, CREATE, or any non-SELECT SQL.\n"
@@ -119,18 +161,7 @@ static std::string generate_sql_for_prompt(const char* natural_language_query, c
         generated_sql_str = result.text;
         elog(INFO, "pg_ai_sdk: AI model returned generated SQL:\n%s", generated_sql_str.c_str());
 
-        // Trim leading and trailing whitespace from the generated SQL
-        const std::string& whitespace = " \t\n\r\f\v";
-        size_t first = generated_sql_str.find_first_not_of(whitespace);
-        if (std::string::npos != first)
-        {
-            size_t last = generated_sql_str.find_last_not_of(whitespace);
-            generated_sql_str = generated_sql_str.substr(first, (last - first + 1));
-        }
-        else
-        {
-            generated_sql_str.clear(); // The string is all whitespace
-        }
+        generated_sql_str = validate_and_sanitize_sql(generated_sql_str);
     } else {
         elog(ERROR, "AI query failed: %s", result.error_message().c_str());
     }
