@@ -1,0 +1,3 @@
+[submodule "vendor/ai-sdk-cpp"]
+	path = vendor/ai-sdk-cpp
+	url = https://github.com/ClickHouse/ai-sdk-cpp.git
