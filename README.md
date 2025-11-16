@@ -74,6 +74,11 @@ LIMIT 5) AS t
 ## Installation and Usage
 
 1. **Install the Dependencies**: Ensure you have PostgreSQL installed with development packages (`postgresql-server-dev-*`), CMake, and a C++ compiler. This project requires CMake 3.20 or higher, G++ 13 and C++ 20.
+    - **Update the PostgreSQL version in CMakeLists.txt as per your installation**
+        ```cmake
+        # Open the CMakeLists.txt file and set the PostgreSQL version
+        set(POSTGRES_VERSION 18)  # Adjust this to your PostgreSQL version
+        ```
 2. **Add as Clickhouse AI SDK as Git Submodule**: Add the `ai-sdk-cpp` repository as a submodule to keep it self-contained.
     ```bash
     git submodule add https://github.com/ClickHouse/ai-sdk-cpp.git vendor/ai-sdk-cpp

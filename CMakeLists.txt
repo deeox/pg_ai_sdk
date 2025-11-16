@@ -2,10 +2,8 @@ cmake_minimum_required(VERSION 3.20)
 project(pg_ai_sdk CXX)
 
 # Find PostgreSQL
-find_package(PostgreSQL 18 EXACT REQUIRED)
-message(STATUS "PostgreSQL include directories: ${PostgreSQL_INCLUDE_DIRS}")
-message(STATUS "PostgreSQL include directories: ${PostgreSQL_SHAREDIR}")
-message(STATUS "PostgreSQL include directories: ${PostgreSQL_LIBRARIES}")
+find_package(PostgreSQL REQUIRED)
+set(POSTGRES_VERSION 18)  # Adjust this to your PostgreSQL version
 
 # Only if PostgreSQL is found, proceed
 if(NOT PostgreSQL_FOUND)
@@ -28,7 +26,7 @@ set_target_properties(pg_ai_sdk PROPERTIES PREFIX "")
 # Add include directories specifically for the pg_ai_sdk target
 target_include_directories(pg_ai_sdk
     PUBLIC
-    /usr/include/postgresql/18/server
+    /usr/include/postgresql/${POSTGRES_VERSION}/server
     /usr/include/postgresql
 )
 
@@ -41,6 +39,7 @@ target_link_libraries(pg_ai_sdk
 
 # Installation instructions for 'make install'
 # Corrected variable names for installation paths
-install(TARGETS pg_ai_sdk DESTINATION /usr/lib/postgresql/18/lib)
-install(FILES pg_ai_sdk.control DESTINATION /usr/share/postgresql/18/extension)
-install(FILES pg_ai_sdk--1.0.sql DESTINATION /usr/share/postgresql/18/extension)
+# Adjust the version number as needed
+install(TARGETS pg_ai_sdk DESTINATION /usr/lib/postgresql/${POSTGRES_VERSION}/lib)
+install(FILES pg_ai_sdk.control DESTINATION /usr/share/postgresql/${POSTGRES_VERSION}/extension)
+install(FILES pg_ai_sdk--1.0.sql DESTINATION /usr/share/postgresql/${POSTGRES_VERSION}/extension)

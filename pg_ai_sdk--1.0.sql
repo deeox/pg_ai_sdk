@@ -1,7 +1,5 @@
--- complain if script is sourced in psql, rather than via CREATE EXTENSION
 \echo Use "CREATE EXTENSION pg_ai_sdk" to load this file. \quit
 
--- Register the function that will be called from SQL
 CREATE OR REPLACE FUNCTION generate_sql_from_text(natural_language_query TEXT)
 RETURNS TEXT
 AS 'MODULE_PATHNAME', 'generate_sql_from_text'

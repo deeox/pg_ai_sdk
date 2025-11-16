@@ -17,7 +17,6 @@ extern "C" {
 #include "ai/logger.h"
 #include "ai/openai.h"
 
-// Required for C++ extensions
 extern "C" {
     PG_MODULE_MAGIC;
 
@@ -85,7 +84,6 @@ static std::string validate_and_sanitize_sql(std::string generated_sql_str) {
 
 static std::string generate_sql_for_prompt(const char* natural_language_query, const char* model_name = "openai/gpt-oss-20b:free") {
     std::string generated_sql_str;
-    // elog(INFO, "pg_ai_sdk: Received query: \"%s\"", natural_language_query);
 
     elog(INFO, "pg_ai_sdk: Fetching database schema information.");
     std::string schema_info;
@@ -110,12 +108,10 @@ static std::string generate_sql_for_prompt(const char* natural_language_query, c
     std::string prompt = "Given the following database schema:\n\n" + schema_info + "\n\nGenerate a SQL query that does the following:\n" + natural_language_query;
     elog(INFO, "pg_ai_sdk: Constructed prompt for AI model.");
 
-    // elog(INFO, "pg_ai_sdk: Initializing AI client.");
     std::string api_key = get_api_key();
 
     auto client = ai::openai::create_client(api_key, "https://openrouter.ai/api");
 
-    // 5. Call the AI model to get the generated SQL query.
     elog(INFO, "pg_ai_sdk: Calling AI model to generate SQL.");
     std::string system_prompt =
         "You are an expert PostgreSQL SQL generator.\n"
@@ -163,7 +159,6 @@ static std::string generate_sql_for_prompt(const char* natural_language_query, c
 Datum
 generate_sql_from_text(PG_FUNCTION_ARGS)
 {
-    // 1. Get the natural language query from the function argument.
     text* natural_language_query_text = PG_GETARG_TEXT_P(0);
     char* natural_language_query = text_to_cstring(natural_language_query_text);
 
@@ -177,7 +172,6 @@ generate_sql_from_text(PG_FUNCTION_ARGS)
         elog(ERROR, "An unknown exception occurred");
     }
 
-    // 6. Return the generated SQL query as a 'text' type.
     text* result_text = cstring_to_text(generated_sql_str.c_str());
     PG_RETURN_TEXT_P(result_text);
 }
@@ -195,12 +189,10 @@ execute_and_return_json(PG_FUNCTION_ARGS)
     try {
         std::string sql = generate_sql_for_prompt(natural_language_query);
 
-        // Wrap the generated SQL to return a JSON array of results
         std::string json_sql = "SELECT json_agg(row_to_json(t)) FROM (" + sql + ") AS t";
         elog(INFO, "pg_ai_sdk: Executing JSON aggregation query:\n%s", json_sql.c_str());
 
         if (SPI_execute(json_sql.c_str(), true, 0) == SPI_OK_SELECT && SPI_processed > 0) {
-            // Check if the result is not NULL
             bool isnull;
             char* json_result_str = SPI_getvalue(SPI_tuptable->vals[0], SPI_tuptable->tupdesc, 1);
             
