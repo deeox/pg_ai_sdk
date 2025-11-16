@@ -66,10 +66,6 @@ static std::string validate_and_sanitize_sql(std::string generated_sql_str) {
     std::transform(upper_sql.begin(), upper_sql.end(), upper_sql.begin(),
                     [](unsigned char c){ return std::toupper(c); });
 
-    if (upper_sql.rfind("SELECT", 0) != 0) {
-        elog(ERROR, "Generated query is not a SELECT statement: %s", generated_sql_str.c_str());
-    }
-
     // Safety check for potentially harmful keywords
     const std::vector<std::string> forbidden_keywords = {
         "INSERT", "UPDATE", "DELETE", "DROP", "CREATE", "ALTER", "TRUNCATE",
@@ -82,10 +78,6 @@ static std::string validate_and_sanitize_sql(std::string generated_sql_str) {
         if (upper_sql.find(keyword) != std::string::npos) {
             elog(ERROR, "Generated query contains a forbidden keyword: %s", keyword.c_str());
         }
-    }
-
-    if (generated_sql_str.find(';') != std::string::npos) {
-        elog(ERROR, "Generated query contains a semicolon, which is not allowed: %s", generated_sql_str.c_str());
     }
 
     return generated_sql_str;
