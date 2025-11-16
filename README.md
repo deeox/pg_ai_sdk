@@ -16,7 +16,7 @@ Secondary goal is to run the generated SQL query and return the results, returni
 
 ## Demo Video
 
-[![PG AI SDK Demo](Demo Video)](https://github.com/deeox/pg_ai_sdk/blob/main/demo/Simplifying%20SQL%20Queries%20with%20AI%20Assistance.mp4)
+[![PG AI SDK Demo](Demo Video)](https://github.com/user-attachments/assets/4c52c3fc-a8e9-4120-8988-632d5d4bd3d3)
 
 ## Examples
 
