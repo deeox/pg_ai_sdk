@@ -14,6 +14,9 @@ The primary goal is to create a PostgreSQL function, e.g., `generate_sql_from_te
 
 Secondary goal is to run the generated SQL query and return the results, returning in a JSON format since generic result sets can vary widely. Also, for customisability, we can allow users to specify which AI model/provider to use via additional parameters.
 
+## Demo Video
+
+[![PG AI SDK Demo](Demo Video)](demo/Simplifying SQL Queries with AI Assistance.mp4)
 
 ## Examples
 
