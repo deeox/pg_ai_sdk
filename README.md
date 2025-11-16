@@ -71,7 +71,11 @@ LIMIT 5) AS t
 ## Installation and Usage
 
 1. **Install the Dependencies**: Ensure you have PostgreSQL installed with development packages (`postgresql-server-dev-*`), CMake, and a C++ compiler. This project requires CMake 3.20 or higher, G++ 13 and C++ 20.
-2. **Install the Extension**: Compile and install the extension into your PostgreSQL instance.
+2. **Add as Clickhouse AI SDK as Git Submodule**: Add the `ai-sdk-cpp` repository as a submodule to keep it self-contained.
+    ```bash
+    git submodule add https://github.com/ClickHouse/ai-sdk-cpp.git vendor/ai-sdk-cpp
+    ```
+3. **Install the Extension**: Compile and install the extension into your PostgreSQL instance.
     -  **Build the Extension**:
         ```bash
         mkdir build && cd build
@@ -87,11 +91,11 @@ LIMIT 5) AS t
         echo "OPENROUTER_API_KEY" | sudo tee /etc/pg_ai_sdk/api_key
         sudo chmod 644 /etc/pg_ai_sdk/api_key
         ```
-2.  **Create the Extension in Your Database**:
+4.  **Create the Extension in Your Database**:
     ```sql
     CREATE EXTENSION pg_ai_sdk;
     ```
-3.  **Call the Function**:
+5.  **Call the Function**:
     ```sql
     -- For generating SQL only
     SELECT generate_sql_from_text('show me all users who signed up last month');
