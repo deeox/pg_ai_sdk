@@ -1,0 +1,4 @@
+comment = 'Translate natural language to SQL using Clickhouse ai-sdk-cpp'
+default_version = '1.0'
+module_pathname = '$libdir/pg_ai_sdk'
+relocatable = true
